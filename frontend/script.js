@@ -1,96 +1,41 @@
 const API = "https://amigo-secreto-backend.onrender.com"
 
-// ===============================
-// ADICIONAR PARTICIPANTE
-// ===============================
-async function adicionar() {
-  const nomeInput = document.getElementById("nome")
-  const nome = nomeInput.value.trim()
+async function sortear() {
+  const meuNome = document.getElementById("meuNome").value.trim()
+  const erro = document.getElementById("mensagemErro")
+  erro.textContent = ""
 
-  if (!nome) {
-    alert("Digite um nome")
+  if (!meuNome) {
+    erro.textContent = "Digite seu nome!"
     return
   }
 
   try {
-    const res = await fetch(`${API}/participantes`, {
+    const res = await fetch(`${API}/sortear-usuario`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json"
       },
-      body: JSON.stringify({ nome })
+      body: JSON.stringify({ nome: meuNome })
     })
 
-    const texto = await res.text()
+    const data = await res.json()
 
     if (!res.ok) {
-      alert(texto)
+      erro.textContent = data.erro
       return
     }
 
-    nomeInput.value = ""
-    listar()
+    document.getElementById("resultado").innerHTML =
+      `🎁 Você tirou:<br><strong>${data.sorteado}</strong> 🎄`
+
+    document.getElementById("popup").style.display = "flex"
 
   } catch (err) {
-    alert("Erro ao adicionar participante")
+    erro.textContent = "Erro ao conectar com o servidor"
   }
 }
 
-// ===============================
-// LISTAR PARTICIPANTES
-// ===============================
-async function listar() {
-  try {
-    const res = await fetch(`${API}/participantes`)
-
-    if (!res.ok) {
-      alert("Erro ao buscar participantes")
-      return
-    }
-
-    const dados = await res.json()
-    const lista = document.getElementById("lista")
-    lista.innerHTML = ""
-
-    dados.forEach(p => {
-      const li = document.createElement("li")
-      li.textContent = p.sorteado
-        ? `${p.nome} → ${p.sorteado}`
-        : p.nome
-      lista.appendChild(li)
-    })
-
-  } catch (err) {
-    alert("Erro de conexão com o servidor")
-  }
+function fecharPopup() {
+  document.getElementById("popup").style.display = "none"
 }
-
-// ===============================
-// SORTEAR TODOS
-// ===============================
-async function sortear() {
-  try {
-    const res = await fetch(`${API}/sortear`, {
-      method: "POST"
-    })
-
-    const texto = await res.text()
-
-    if (!res.ok) {
-      alert(texto)
-      return
-    }
-
-    const data = JSON.parse(texto)
-    alert(data.mensagem)
-    listar()
-
-  } catch (err) {
-    alert("Erro ao realizar sorteio")
-  }
-}
-
-// ===============================
-// CARREGAR AO ABRIR
-// ===============================
-listar()
