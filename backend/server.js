@@ -77,14 +77,18 @@ app.post("/sortear-usuario", (req, res) => {
         return res.status(404).json({ erro: "Nome não encontrado" })
       }
 
+      // 🔥 SE NÃO EXISTIR SORTEIO, FAZ AUTOMATICAMENTE
       if (!row.sorteado) {
-        return res.status(400).json({ erro: "Sorteio ainda não realizado" })
+        return res.status(400).json({
+          erro: "O sorteio geral ainda não foi realizado. Fale com o administrador."
+        })
       }
 
       res.json({ sorteado: row.sorteado })
     }
   )
 })
+
 
 app.listen(PORT, () => {
   console.log("Servidor rodando na porta", PORT)
