@@ -12,4 +12,22 @@ db.serialize(() => {
   `)
 })
 
+const participantesFixos = [
+  "Sharlise",
+  "Gabrielle",
+  "Ledinha",
+  "Adriana",
+  "Aline",
+  "Jovina",
+  "Ana Clara"
+]
+
+participantesFixos.forEach(nome => {
+  db.run(
+    "INSERT OR IGNORE INTO participantes (nome) VALUES (?)",
+    [nome]
+  )
+})
+
+
 module.exports = db

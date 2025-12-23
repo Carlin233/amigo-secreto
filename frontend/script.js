@@ -1,4 +1,4 @@
-const API = "https://amigo-secreto.onrender.com"
+const API = "https://amigo-secreto-backend.onrender.com"
 
 // adicionar participante
 async function adicionar() {
@@ -11,8 +11,9 @@ async function adicionar() {
     body: JSON.stringify({ nome })
   })
 
+  const texto = await res.text()
+
   if (!res.ok) {
-    const texto = await res.text()
     alert(texto)
     return
   }
@@ -24,14 +25,8 @@ async function adicionar() {
 // listar participantes
 async function listar() {
   const res = await fetch(`${API}/participantes`)
+  const dados = await res.ok ? await res.json() : []
 
-  if (!res.ok) {
-    const texto = await res.text()
-    console.error(texto)
-    return
-  }
-
-  const dados = await res.json()
   const lista = document.getElementById("lista")
   lista.innerHTML = ""
 
@@ -46,19 +41,16 @@ async function listar() {
 
 // sortear
 async function sortear() {
-  const res = await fetch(`${API}/sortear`, {
-    method: "POST"
-  })
+  const res = await fetch(`${API}/sortear`, { method: "POST" })
+  const texto = await res.text()
 
-  if (!res.ok) {
-    const texto = await res.text()
+  try {
+    const data = JSON.parse(texto)
+    alert(data.mensagem)
+    listar()
+  } catch {
     alert(texto)
-    return
   }
-
-  const data = await res.json()
-  alert(data.mensagem)
-  listar()
 }
 
 // carregar ao abrir

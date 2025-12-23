@@ -1,52 +1,56 @@
 const API = "https://amigo-secreto-backend.onrender.com"
 
-// adicionar participante
-async function adicionar() {
-  const nome = document.getElementById("nome").value
-
-  if (!nome) {
-    alert("Digite um nome")
-    return
-  }
-
-  await fetch(`${API}/participantes`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ nome })
-  })
-
-  document.getElementById("nome").value = ""
-  listar()
-}
-
 // listar participantes
 async function listar() {
-  const res = await fetch(`${API}/participantes`)
-  const dados = await res.json()
+  try {
+    const res = await fetch(`${API}/participantes`)
 
-  const lista = document.getElementById("lista")
-  lista.innerHTML = ""
+    if (!res.ok) {
+      const texto = await res.text()
+      alert(texto)
+      return
+    }
 
-  dados.forEach(p => {
-    const li = document.createElement("li")
-    li.innerText = p.sorteado
-      ? `${p.nome} → ${p.sorteado}`
-      : p.nome
-    lista.appendChild(li)
-  })
+    const dados = await res.json()
+    const lista = document.getElementById("lista")
+    lista.innerHTML = ""
+
+    dados.forEach(p => {
+      const li = document.createElement("li")
+
+      // só mostra o sorteado depois do sorteio
+      li.innerText = p.sorteado
+        ? `${p.nome} → ${p.sorteado}`
+        : p.nome
+
+      lista.appendChild(li)
+    })
+  } catch (err) {
+    alert("Erro ao carregar participantes")
+  }
 }
 
 // sortear
 async function sortear() {
-  const res = await fetch(`${API}/sortear`, {
-    method: "POST"
-  })
+  try {
+    const res = await fetch(`${API}/sortear`, {
+      method: "POST"
+    })
 
-  const data = await res.json()
-  alert(data.mensagem)
+    if (!res.ok) {
+      const texto = await res.text()
+      alert(texto)
+      return
+    }
 
-  listar()
+    const data = await res.json()
+    alert(data.mensagem)
+
+    listar()
+  } catch (err) {
+    alert("Erro ao realizar sorteio")
+  }
 }
 
-// carregar lista ao abrir
+// carregar ao abrir
 listar()
