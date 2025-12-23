@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="pt-br">
+<html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
   <title>Amigo Secreto</title>
@@ -7,15 +7,19 @@
 </head>
 <body>
 
-<h1>🎁 Amigo Secreto</h1>
+  <div class="container">
+    <h1>🎁 Amigo Secreto</h1>
 
-<input type="text" id="nome" placeholder="Nome">
-<button onclick="adicionar()">Adicionar</button>
+    <div class="input-group">
+      <input id="nome" placeholder="Digite o nome">
+      <button onclick="adicionar()">+</button>
+    </div>
 
-<button onclick="sortear()">Sortear</button>
+    <button class="sortear" onclick="sortear()">🎲 Sortear</button>
 
-<ul id="lista"></ul>
+    <ul id="lista"></ul>
+  </div>
 
-<script src="script.js"></script>
+  <script src="script.js"></script>
 </body>
 </html>

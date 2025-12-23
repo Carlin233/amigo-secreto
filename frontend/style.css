@@ -1,15 +1,78 @@
-body {
-  font-family: Arial;
-  background: #121212;
-  color: #fff;
-  text-align: center;
+* {
+  box-sizing: border-box;
+  font-family: Arial, Helvetica, sans-serif;
 }
 
-input, button {
+body {
+  margin: 0;
+  background: linear-gradient(135deg, #7b2ff7, #f107a3);
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.container {
+  background: #fff;
+  width: 100%;
+  max-width: 420px;
+  padding: 25px;
+  border-radius: 15px;
+  box-shadow: 0 15px 40px rgba(0,0,0,.2);
+}
+
+h1 {
+  text-align: center;
+  margin-bottom: 20px;
+  color: #333;
+}
+
+.input-group {
+  display: flex;
+  gap: 10px;
+}
+
+input {
+  flex: 1;
   padding: 10px;
-  margin: 5px;
+  border-radius: 8px;
+  border: 1px solid #ccc;
 }
 
 button {
+  padding: 10px 15px;
+  border: none;
+  border-radius: 8px;
+  background: #7b2ff7;
+  color: #fff;
   cursor: pointer;
+  font-weight: bold;
+}
+
+button:hover {
+  opacity: .9;
+}
+
+.sortear {
+  width: 100%;
+  margin-top: 15px;
+  background: #f107a3;
+}
+
+ul {
+  list-style: none;
+  padding: 0;
+  margin-top: 20px;
+}
+
+li {
+  display: flex;
+  justify-content: space-between;
+  padding: 10px;
+  border-bottom: 1px solid #eee;
+}
+
+li span {
+  color: #7b2ff7;
+  font-weight: bold;
 }
