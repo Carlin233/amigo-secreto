@@ -1,56 +1,53 @@
 const API = "https://amigo-secreto-backend.onrender.com"
 
-// listar participantes
-async function listar() {
-  try {
-    const res = await fetch(`${API}/participantes`)
-
-    if (!res.ok) {
-      const texto = await res.text()
-      alert(texto)
-      return
-    }
-
-    const dados = await res.json()
-    const lista = document.getElementById("lista")
-    lista.innerHTML = ""
-
-    dados.forEach(p => {
-      const li = document.createElement("li")
-
-      // só mostra o sorteado depois do sorteio
-      li.innerText = p.sorteado
-        ? `${p.nome} → ${p.sorteado}`
-        : p.nome
-
-      lista.appendChild(li)
-    })
-  } catch (err) {
-    alert("Erro ao carregar participantes")
-  }
-}
-
-// sortear
 async function sortear() {
-  try {
-    const res = await fetch(`${API}/sortear`, {
-      method: "POST"
-    })
+  const meuNome = document.getElementById("meuNome").value.trim()
+  const erro = document.getElementById("mensagemErro")
+  erro.textContent = ""
 
-    if (!res.ok) {
-      const texto = await res.text()
-      alert(texto)
-      return
-    }
+  if (!meuNome) {
+    erro.textContent = "Digite seu nome!"
+    return
+  }
+
+  try {
+    const res = await fetch(`${API}/sortear-usuario`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({ nome: meuNome })
+    })
 
     const data = await res.json()
-    alert(data.mensagem)
 
-    listar()
+    if (!res.ok) {
+      erro.textContent = data.erro
+      return
+    }
+
+    document.getElementById("resultado").innerHTML =
+      `🎁 Você tirou:<br><strong>${data.sorteado}</strong> 🎄`
+
+    document.getElementById("popup").style.display = "flex"
+
   } catch (err) {
-    alert("Erro ao realizar sorteio")
+    erro.textContent = "Erro ao conectar com o servidor"
   }
 }
 
-// carregar ao abrir
-listar()
+function fecharPopup() {
+  document.getElementById("popup").style.display = "none"
+}
+
+/* Neve ❄ (continua igual) */
+function criarNeve() {
+  let floco = document.createElement("div")
+  floco.classList.add("snowflake")
+  floco.textContent = "❄"
+  floco.style.left = Math.random() * 100 + "vw"
+  floco.style.animationDuration = (Math.random() * 3 + 2) + "s"
+  document.body.appendChild(floco)
+  setTimeout(() => floco.remove(), 5000)
+}
+setInterval(criarNeve, 200)

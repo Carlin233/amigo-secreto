@@ -1,25 +1,30 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8">
-  <title>Amigo Secreto</title>
-  <link rel="stylesheet" href="style.css">
+    <meta charset="UTF-8">
+    <title>AMIGA CALCINHA</title>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-  <div class="container">
-    <h1>🎁 Amigo Secreto</h1>
+    <h1>🎅 AMIGA CALCINHA 🎄</h1>
 
-    <div class="input-group">
-      <input id="nome" placeholder="Digite o nome">
-      <button onclick="adicionar()">+</button>
+    <div class="box">
+        <p style="font-size: 18px;">DIGITE SEU NOME:</p>
+        <input type="text" id="meuNome" placeholder="Ex: Gabi">
+        <p id="mensagemErro"></p>
+        <button onclick="sortear()">Sortear 🎁</button>
+        <p class="feito" id="listaFeitos"></p>
     </div>
 
-    <button class="sortear" onclick="sortear()">🎲 Sortear</button>
+    <!-- POPUP -->
+    <div class="popup" id="popup">
+        <div class="popup-conteudo">
+            <h2 id="resultado"></h2>
+            <button class="fechar" onclick="fecharPopup()">Fechar</button>
+        </div>
+    </div>
 
-    <ul id="lista"></ul>
-  </div>
-
-  <script src="script.js"></script>
+    <script src="script.js"></script>
 </body>
 </html>
