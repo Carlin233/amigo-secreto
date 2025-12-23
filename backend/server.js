@@ -8,14 +8,12 @@ const PORT = process.env.PORT || 3000
 app.use(cors())
 app.use(express.json())
 
-// TESTE DE VIDA (IMPORTANTE)
+// 🔹 TESTE DE VIDA DO SERVIDOR
 app.get("/", (req, res) => {
-  res.send("Servidor rodando OK 🚀")
+  res.send("Servidor Amigo Secreto ONLINE 🚀")
 })
 
-/* =========================
-   LISTAR PARTICIPANTES
-========================= */
+// 🔹 LISTAR PARTICIPANTES
 app.get("/participantes", (req, res) => {
   db.all("SELECT nome, sorteado FROM participantes", [], (err, rows) => {
     if (err) {
@@ -25,63 +23,68 @@ app.get("/participantes", (req, res) => {
   })
 })
 
-/* =========================
-   SORTEAR PARA UM USUÁRIO
-========================= */
+// 🔹 SORTEAR TODOS (ADMIN)
+app.post("/sortear", (req, res) => {
+  db.all("SELECT nome FROM participantes", [], (err, rows) => {
+    if (err) return res.status(500).send("Erro no banco")
+
+    const nomes = rows.map(r => r.nome)
+    let sorteio = [...nomes]
+
+    // embaralhar
+    for (let i = sorteio.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1))
+      ;[sorteio[i], sorteio[j]] = [sorteio[j], sorteio[i]]
+    }
+
+    // impedir auto-sorteio
+    for (let i = 0; i < nomes.length; i++) {
+      if (nomes[i] === sorteio[i]) {
+        return res.status(400).send("Refaça o sorteio")
+      }
+    }
+
+    const stmt = db.prepare(
+      "UPDATE participantes SET sorteado = ? WHERE nome = ?"
+    )
+
+    nomes.forEach((nome, i) => {
+      stmt.run(sorteio[i], nome)
+    })
+
+    stmt.finalize()
+    res.json({ mensagem: "Sorteio realizado com sucesso 🎉" })
+  })
+})
+
+// 🔹 SORTEAR USUÁRIO INDIVIDUAL (TELA DO SITE)
 app.post("/sortear-usuario", (req, res) => {
   const { nome } = req.body
 
   if (!nome) {
-    return res.status(400).json({ erro: "Nome é obrigatório" })
+    return res.status(400).json({ erro: "Nome não informado" })
   }
 
   db.get(
-    "SELECT * FROM participantes WHERE nome = ?",
+    "SELECT sorteado FROM participantes WHERE nome = ?",
     [nome],
-    (err, participante) => {
-      if (err || !participante) {
+    (err, row) => {
+      if (err) {
+        return res.status(500).json({ erro: "Erro no servidor" })
+      }
+
+      if (!row) {
         return res.status(404).json({ erro: "Nome não encontrado" })
       }
 
-      if (participante.sorteado) {
-        return res.json({ sorteado: participante.sorteado })
+      if (!row.sorteado) {
+        return res.status(400).json({ erro: "Sorteio ainda não realizado" })
       }
 
-      db.all(
-        `
-        SELECT nome FROM participantes
-        WHERE nome != ? AND nome NOT IN (
-          SELECT sorteado FROM participantes WHERE sorteado IS NOT NULL
-        )
-        `,
-        [nome],
-        (err, disponiveis) => {
-          if (err || disponiveis.length === 0) {
-            return res.status(400).json({
-              erro: "Não há mais pessoas disponíveis para sorteio"
-            })
-          }
-
-          const escolhido =
-            disponiveis[Math.floor(Math.random() * disponiveis.length)].nome
-
-          db.run(
-            "UPDATE participantes SET sorteado = ? WHERE nome = ?",
-            [escolhido, nome],
-            err => {
-              if (err) {
-                return res.status(500).json({ erro: "Erro ao salvar sorteio" })
-              }
-              res.json({ sorteado: escolhido })
-            }
-          )
-        }
-      )
+      res.json({ sorteado: row.sorteado })
     }
   )
 })
-
-/* ========================= */
 
 app.listen(PORT, () => {
   console.log("Servidor rodando na porta", PORT)
