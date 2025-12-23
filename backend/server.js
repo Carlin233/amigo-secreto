@@ -26,6 +26,24 @@ db.serialize(() => {
   `)
 })
 
+const nomesIniciais = [
+  "Sharlise",
+  "Gabielle",
+  "Ledinha",
+  "Adriana",
+  "Aline",
+  "Jovina",
+  "Ana"
+]
+
+nomesIniciais.forEach(nome => {
+  db.run(
+    "INSERT OR IGNORE INTO participantes (nome) VALUES (?)",
+    [nome]
+  )
+})
+
+
 // ===============================
 // ROTAS
 // ===============================
