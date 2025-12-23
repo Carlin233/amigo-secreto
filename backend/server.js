@@ -3,74 +3,86 @@ const cors = require("cors")
 const db = require("./db")
 
 const app = express()
-const PORT = process.env.PORT || 3000
 
 app.use(cors())
 app.use(express.json())
 
-// ===============================
-// LISTAR PARTICIPANTES (FIX)
-// ===============================
-app.get("/participantes", (req, res) => {
-  db.all(
-    "SELECT nome, sorteado FROM participantes",
-    (err, rows) => {
-      if (err) {
-        console.error(err)
-        return res
-          .status(500)
-          .send("Erro ao buscar participantes")
-      }
-      res.json(rows)
-    }
-  )
+// 🔍 TESTE DE VIDA (IMPORTANTE PARA O RENDER)
+app.get("/", (req, res) => {
+  res.send("🔥 Backend Amigo Secreto rodando!")
 })
 
-// ===============================
-// SORTEAR USUÁRIO
-// ===============================
+/* =========================
+   LISTAR PARTICIPANTES
+========================= */
+app.get("/participantes", (req, res) => {
+  db.all("SELECT nome, sorteado FROM participantes", [], (err, rows) => {
+    if (err) {
+      console.error(err)
+      return res.status(500).send("Erro ao buscar participantes")
+    }
+    res.json(rows)
+  })
+})
+
+/* =========================
+   SORTEAR USUÁRIO
+========================= */
 app.post("/sortear-usuario", (req, res) => {
   const { nome } = req.body
 
   if (!nome) {
-    return res.status(400).json({ erro: "Nome obrigatório" })
+    return res.status(400).json({ erro: "Nome é obrigatório" })
   }
 
   db.get(
-    "SELECT sorteado FROM participantes WHERE nome = ?",
+    "SELECT * FROM participantes WHERE nome = ?",
     [nome],
-    (err, row) => {
-      if (err || !row) {
-        return res.status(400).json({ erro: "Nome não encontrado" })
+    (err, participante) => {
+      if (err) {
+        console.error(err)
+        return res.status(500).json({ erro: "Erro no banco" })
       }
 
-      if (row.sorteado) {
-        return res.json({ sorteado: row.sorteado })
+      if (!participante) {
+        return res.status(404).json({ erro: "Nome não encontrado" })
+      }
+
+      if (participante.sorteado) {
+        return res.status(400).json({
+          erro: "Você já realizou o sorteio"
+        })
       }
 
       db.all(
-        `
-        SELECT nome FROM participantes
-        WHERE nome != ?
-        AND nome NOT IN (
-          SELECT sorteado FROM participantes WHERE sorteado IS NOT NULL
-        )
-        `,
+        "SELECT nome FROM participantes WHERE nome != ? AND nome NOT IN (SELECT sorteado FROM participantes WHERE sorteado IS NOT NULL)",
         [nome],
-        (err, rows) => {
-          if (!rows || rows.length === 0) {
-            return res
-              .status(400)
-              .json({ erro: "Não há nomes disponíveis" })
+        (err, disponiveis) => {
+          if (err) {
+            console.error(err)
+            return res.status(500).json({ erro: "Erro no sorteio" })
           }
 
-          const sorteado =
-            rows[Math.floor(Math.random() * rows.length)].nome
+          if (disponiveis.length === 0) {
+            return res.status(400).json({
+              erro: "Não há mais nomes disponíveis"
+            })
+          }
+
+          const escolhido =
+            disponiveis[Math.floor(Math.random() * disponiveis.length)].nome
 
           db.run(
             "UPDATE participantes SET sorteado = ? WHERE nome = ?",
-            [sorteado, nome],
-            () => res.json({ sorteado })
+            [escolhido, nome],
+            err => {
+              if (err) {
+                console.error(err)
+                return res.status(500).json({ erro: "Erro ao salvar sorteio" })
+              }
+
+              res.json({ sorteado: escolhido })
+            }
           )
         }
       )
@@ -78,7 +90,10 @@ app.post("/sortear-usuario", (req, res) => {
   )
 })
 
-// ===============================
+/* =========================
+   PORTA (RENDER)
+========================= */
+const PORT = process.env.PORT || 3000
 app.listen(PORT, () => {
-  console.log("Servidor rodando na porta", PORT)
+  console.log("🚀 Servidor rodando na porta", PORT)
 })
