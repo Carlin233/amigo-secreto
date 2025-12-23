@@ -8,30 +8,31 @@ const PORT = process.env.PORT || 3000
 app.use(cors())
 app.use(express.json())
 
-/* ===============================
-   LISTAR PARTICIPANTES
-================================ */
-app.get("/participantes", (req, res) => {
-  db.all(
-    "SELECT nome, sorteado FROM participantes",
-    [],
-    (err, rows) => {
-      if (err) {
-        return res.status(500).send("Erro ao buscar participantes")
-      }
-      res.json(rows)
-    }
-  )
+// TESTE DE VIDA (IMPORTANTE)
+app.get("/", (req, res) => {
+  res.send("Servidor rodando OK 🚀")
 })
 
-/* ===============================
-   SORTEAR UM USUÁRIO
-================================ */
+/* =========================
+   LISTAR PARTICIPANTES
+========================= */
+app.get("/participantes", (req, res) => {
+  db.all("SELECT nome, sorteado FROM participantes", [], (err, rows) => {
+    if (err) {
+      return res.status(500).send("Erro ao buscar participantes")
+    }
+    res.json(rows)
+  })
+})
+
+/* =========================
+   SORTEAR PARA UM USUÁRIO
+========================= */
 app.post("/sortear-usuario", (req, res) => {
   const { nome } = req.body
 
   if (!nome) {
-    return res.status(400).json({ erro: "Nome não informado" })
+    return res.status(400).json({ erro: "Nome é obrigatório" })
   }
 
   db.get(
@@ -43,25 +44,22 @@ app.post("/sortear-usuario", (req, res) => {
       }
 
       if (participante.sorteado) {
-        return res
-          .status(400)
-          .json({ erro: "Você já realizou o sorteio" })
+        return res.json({ sorteado: participante.sorteado })
       }
 
       db.all(
         `
         SELECT nome FROM participantes
-        WHERE nome != ?
-        AND nome NOT IN (
+        WHERE nome != ? AND nome NOT IN (
           SELECT sorteado FROM participantes WHERE sorteado IS NOT NULL
         )
         `,
         [nome],
         (err, disponiveis) => {
           if (err || disponiveis.length === 0) {
-            return res
-              .status(400)
-              .json({ erro: "Não há nomes disponíveis para sorteio" })
+            return res.status(400).json({
+              erro: "Não há mais pessoas disponíveis para sorteio"
+            })
           }
 
           const escolhido =
@@ -72,11 +70,8 @@ app.post("/sortear-usuario", (req, res) => {
             [escolhido, nome],
             err => {
               if (err) {
-                return res
-                  .status(500)
-                  .json({ erro: "Erro ao salvar sorteio" })
+                return res.status(500).json({ erro: "Erro ao salvar sorteio" })
               }
-
               res.json({ sorteado: escolhido })
             }
           )
@@ -86,12 +81,7 @@ app.post("/sortear-usuario", (req, res) => {
   )
 })
 
-/* ===============================
-   TESTE DE VIDA (IMPORTANTE)
-================================ */
-app.get("/", (req, res) => {
-  res.send("Servidor Amiga Calcinha rodando 🎄")
-})
+/* ========================= */
 
 app.listen(PORT, () => {
   console.log("Servidor rodando na porta", PORT)
