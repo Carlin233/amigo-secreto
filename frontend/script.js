@@ -1,57 +1,96 @@
 const API = "https://amigo-secreto-backend.onrender.com"
 
-// adicionar participante
+// ===============================
+// ADICIONAR PARTICIPANTE
+// ===============================
 async function adicionar() {
-  const nome = document.getElementById("nome").value.trim()
-  if (!nome) return alert("Digite um nome")
+  const nomeInput = document.getElementById("nome")
+  const nome = nomeInput.value.trim()
 
-  const res = await fetch(`${API}/participantes`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ nome })
-  })
-
-  const texto = await res.text()
-
-  if (!res.ok) {
-    alert(texto)
+  if (!nome) {
+    alert("Digite um nome")
     return
   }
 
-  document.getElementById("nome").value = ""
-  listar()
-}
-
-// listar participantes
-async function listar() {
-  const res = await fetch(`${API}/participantes`)
-  const dados = await res.ok ? await res.json() : []
-
-  const lista = document.getElementById("lista")
-  lista.innerHTML = ""
-
-  dados.forEach(p => {
-    const li = document.createElement("li")
-    li.textContent = p.sorteado
-      ? `${p.nome} → ${p.sorteado}`
-      : p.nome
-    lista.appendChild(li)
-  })
-}
-
-// sortear
-async function sortear() {
-  const res = await fetch(`${API}/sortear`, { method: "POST" })
-  const texto = await res.text()
-
   try {
-    const data = JSON.parse(texto)
-    alert(data.mensagem)
+    const res = await fetch(`${API}/participantes`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({ nome })
+    })
+
+    const texto = await res.text()
+
+    if (!res.ok) {
+      alert(texto)
+      return
+    }
+
+    nomeInput.value = ""
     listar()
-  } catch {
-    alert(texto)
+
+  } catch (err) {
+    alert("Erro ao adicionar participante")
   }
 }
 
-// carregar ao abrir
+// ===============================
+// LISTAR PARTICIPANTES
+// ===============================
+async function listar() {
+  try {
+    const res = await fetch(`${API}/participantes`)
+
+    if (!res.ok) {
+      alert("Erro ao buscar participantes")
+      return
+    }
+
+    const dados = await res.json()
+    const lista = document.getElementById("lista")
+    lista.innerHTML = ""
+
+    dados.forEach(p => {
+      const li = document.createElement("li")
+      li.textContent = p.sorteado
+        ? `${p.nome} → ${p.sorteado}`
+        : p.nome
+      lista.appendChild(li)
+    })
+
+  } catch (err) {
+    alert("Erro de conexão com o servidor")
+  }
+}
+
+// ===============================
+// SORTEAR TODOS
+// ===============================
+async function sortear() {
+  try {
+    const res = await fetch(`${API}/sortear`, {
+      method: "POST"
+    })
+
+    const texto = await res.text()
+
+    if (!res.ok) {
+      alert(texto)
+      return
+    }
+
+    const data = JSON.parse(texto)
+    alert(data.mensagem)
+    listar()
+
+  } catch (err) {
+    alert("Erro ao realizar sorteio")
+  }
+}
+
+// ===============================
+// CARREGAR AO ABRIR
+// ===============================
 listar()
