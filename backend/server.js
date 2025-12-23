@@ -1,53 +1,179 @@
-const API = "https://amigo-secreto-backend.onrender.com"
+const express = require("express")
+const cors = require("cors")
+const sqlite3 = require("sqlite3").verbose()
 
-async function sortear() {
-  const meuNome = document.getElementById("meuNome").value.trim()
-  const erro = document.getElementById("mensagemErro")
-  erro.textContent = ""
+const app = express()
+const PORT = process.env.PORT || 3000
 
-  if (!meuNome) {
-    erro.textContent = "Digite seu nome!"
-    return
+// ===============================
+// MIDDLEWARES
+// ===============================
+app.use(cors())
+app.use(express.json())
+
+// ===============================
+// BANCO DE DADOS
+// ===============================
+const db = new sqlite3.Database("./database.db")
+
+db.serialize(() => {
+  db.run(`
+    CREATE TABLE IF NOT EXISTS participantes (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      nome TEXT UNIQUE,
+      sorteado TEXT
+    )
+  `)
+})
+
+// ===============================
+// ROTAS
+// ===============================
+
+// listar participantes
+app.get("/participantes", (req, res) => {
+  db.all(
+    "SELECT nome, sorteado FROM participantes",
+    (err, rows) => {
+      if (err) {
+        return res.status(500).send("Erro ao buscar participantes")
+      }
+      res.json(rows)
+    }
+  )
+})
+
+// adicionar participante
+app.post("/participantes", (req, res) => {
+  const { nome } = req.body
+
+  if (!nome) {
+    return res.status(400).send("Nome obrigatório")
   }
 
-  try {
-    const res = await fetch(`${API}/sortear-usuario`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({ nome: meuNome })
-    })
+  db.run(
+    "INSERT INTO participantes (nome) VALUES (?)",
+    [nome],
+    err => {
+      if (err) {
+        return res.status(400).send("Nome já existe")
+      }
+      res.send("Participante adicionado")
+    }
+  )
+})
 
-    const data = await res.json()
+// ===============================
+// SORTEIO INDIVIDUAL
+// ===============================
+app.post("/sortear-usuario", (req, res) => {
+  const { nome } = req.body
 
-    if (!res.ok) {
-      erro.textContent = data.erro
-      return
+  if (!nome) {
+    return res.status(400).json({ erro: "Nome obrigatório" })
+  }
+
+  // verifica se existe
+  db.get(
+    "SELECT sorteado FROM participantes WHERE nome = ?",
+    [nome],
+    (err, participante) => {
+      if (err) {
+        return res.status(500).json({ erro: "Erro no banco" })
+      }
+
+      if (!participante) {
+        return res.status(400).json({ erro: "Nome não encontrado" })
+      }
+
+      // se já sorteou
+      if (participante.sorteado) {
+        return res.json({ sorteado: participante.sorteado })
+      }
+
+      // busca nomes disponíveis
+      db.all(
+        `
+        SELECT nome FROM participantes
+        WHERE nome != ?
+        AND nome NOT IN (
+          SELECT sorteado FROM participantes WHERE sorteado IS NOT NULL
+        )
+        `,
+        [nome],
+        (err, rows) => {
+          if (err || rows.length === 0) {
+            return res
+              .status(400)
+              .json({ erro: "Não há nomes disponíveis para sortear" })
+          }
+
+          const sorteado =
+            rows[Math.floor(Math.random() * rows.length)].nome
+
+          // salva no banco
+          db.run(
+            "UPDATE participantes SET sorteado = ? WHERE nome = ?",
+            [sorteado, nome],
+            err => {
+              if (err) {
+                return res
+                  .status(500)
+                  .json({ erro: "Erro ao salvar sorteio" })
+              }
+
+              res.json({ sorteado })
+            }
+          )
+        }
+      )
+    }
+  )
+})
+
+// ===============================
+// SORTEIO GLOBAL (OPCIONAL)
+// ===============================
+app.post("/sortear", (req, res) => {
+  db.all("SELECT nome FROM participantes", (err, rows) => {
+    if (err || rows.length < 3) {
+      return res.status(400).send("Participantes insuficientes")
     }
 
-    document.getElementById("resultado").innerHTML =
-      `🎁 Você tirou:<br><strong>${data.sorteado}</strong> 🎄`
+    const nomes = rows.map(r => r.nome)
 
-    document.getElementById("popup").style.display = "flex"
+    function embaralhar(arr) {
+      for (let i = arr.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1))
+        ;[arr[i], arr[j]] = [arr[j], arr[i]]
+      }
+      return arr
+    }
 
-  } catch (err) {
-    erro.textContent = "Erro ao conectar com o servidor"
-  }
-}
+    let sorteados
+    let valido = false
 
-function fecharPopup() {
-  document.getElementById("popup").style.display = "none"
-}
+    while (!valido) {
+      sorteados = embaralhar([...nomes])
+      valido = nomes.every((n, i) => n !== sorteados[i])
+    }
 
-/* Neve ❄ (continua igual) */
-function criarNeve() {
-  let floco = document.createElement("div")
-  floco.classList.add("snowflake")
-  floco.textContent = "❄"
-  floco.style.left = Math.random() * 100 + "vw"
-  floco.style.animationDuration = (Math.random() * 3 + 2) + "s"
-  document.body.appendChild(floco)
-  setTimeout(() => floco.remove(), 5000)
-}
-setInterval(criarNeve, 200)
+    const stmt = db.prepare(
+      "UPDATE participantes SET sorteado = ? WHERE nome = ?"
+    )
+
+    nomes.forEach((nome, i) => {
+      stmt.run(sorteados[i], nome)
+    })
+
+    stmt.finalize()
+    res.json({ mensagem: "Sorteio realizado com sucesso 🎉" })
+  })
+})
+
+// ===============================
+// START
+// ===============================
+app.listen(PORT, () => {
+  console.log("Servidor rodando na porta", PORT)
+})
